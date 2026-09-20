@@ -151,8 +151,8 @@ class WageEngineTest {
                 grossEarnings = 4000,
                 requestedDeduction = 10000
             )
-            assertTrue(result is DeductionRejected)
-            val rejected = result as DeductionRejected
+            assertTrue(result is DeductionValidation.Rejected)
+            val rejected = result as DeductionValidation.Rejected
             assertEquals(4000, rejected.maxAllowed)
         }
 
@@ -192,8 +192,8 @@ class WageEngineTest {
             grossEarnings = 5000,
             requestedDeduction = 1000
         )
-        assertTrue(result is DeductionRejected)
-        val rejected = result as DeductionRejected
+        assertTrue(result is DeductionValidation.Rejected)
+        val rejected = result as DeductionValidation.Rejected
         assertEquals(500, rejected.maxAllowed)
         assertTrue(rejected.reason.contains("balance", ignoreCase = true))
     }
@@ -492,8 +492,8 @@ class WageEngineTest {
                 grossEarnings = 6000,
                 requestedDeduction = 3000
             )
-            assertTrue(result is DeductionOk)
-            assertEquals(3000, (result as DeductionOk).deduction)
+            assertTrue(result is DeductionValidation.Ok)
+            assertEquals(3000, (result as DeductionValidation.Ok).deduction)
         }
 
         @Test
@@ -505,8 +505,8 @@ class WageEngineTest {
                 grossEarnings = 300,
                 requestedDeduction = 800
             )
-            assertTrue(result is DeductionRejected)
-            assertEquals(500, (result as DeductionRejected).maxAllowed)
+            assertTrue(result is DeductionValidation.Rejected)
+            assertEquals(500, (result as DeductionValidation.Rejected).maxAllowed)
         }
 
         @Test

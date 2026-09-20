@@ -35,19 +35,13 @@ data class DayTotalResult(
 )
 
 /**
- * Returned by [validateDeduction] when the deduction is acceptable.
+ * Result of [WageEngine.validateDeduction]. Sealed so callers get
+ * exhaustive `when` checking without casting.
  */
-data class DeductionOk(
-    val deduction: Int
-)
-
-/**
- * Returned by [validateDeduction] when the deduction is rejected.
- */
-data class DeductionRejected(
-    val reason: String,
-    val maxAllowed: Int
-)
+sealed class DeductionValidation {
+    data class Ok(val deduction: Int) : DeductionValidation()
+    data class Rejected(val reason: String, val maxAllowed: Int) : DeductionValidation()
+}
 
 data class SettlementResult(
     val baseEarnings: Int,
@@ -192,28 +186,28 @@ object WageEngine {
      * A-5: deduction must not exceed outstanding balance.
      * A-6: deduction must not exceed gross earnings (net payable is never negative).
      *
-     * Returns either [DeductionOk] or [DeductionRejected].
+     * Returns [DeductionValidation.Ok] or [DeductionValidation.Rejected].
      */
     fun validateDeduction(
         balance: Int,
         grossEarnings: Int,
         requestedDeduction: Int
-    ): Any {
+    ): DeductionValidation {
         // A-5: deduction must not exceed balance
         if (requestedDeduction > balance) {
-            return DeductionRejected(
+            return DeductionValidation.Rejected(
                 reason = "Deduction exceeds outstanding advance balance",
                 maxAllowed = balance
             )
         }
         // A-6: deduction must not exceed gross earnings (net payable never negative)
         if (requestedDeduction > grossEarnings) {
-            return DeductionRejected(
+            return DeductionValidation.Rejected(
                 reason = "Deduction exceeds gross earnings; net payable would be negative",
                 maxAllowed = grossEarnings
             )
         }
-        return DeductionOk(deduction = requestedDeduction)
+        return DeductionValidation.Ok(deduction = requestedDeduction)
     }
 
     // ── S-5 ─────────────────────────────────────────────────────────
