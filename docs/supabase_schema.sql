@@ -168,3 +168,23 @@ CREATE TABLE IF NOT EXISTS settings (
 --    once app_user sync lands.
 -- 3. Add row-level policies scoped to the authenticated user's
 --    organisation once multi-tenancy is considered.
+
+-- ─── Grants for the anon role ────────────────────────────────
+-- Supabase denies all access to new tables by default even without RLS.
+-- These grants allow the anon key (used by SyncManager) to push data.
+-- Grants are narrow: SELECT + INSERT + UPDATE only — no DELETE.
+-- DELETE is intentionally omitted: the data model never deletes rows (G-2).
+-- When RLS is enabled as a follow-up, add row-level policies and these
+-- broad grants can be narrowed or removed accordingly.
+
+GRANT SELECT, INSERT, UPDATE ON public.role               TO anon;
+GRANT SELECT, INSERT, UPDATE ON public.site               TO anon;
+GRANT SELECT, INSERT, UPDATE ON public.worker             TO anon;
+GRANT SELECT, INSERT, UPDATE ON public.daily_record       TO anon;
+GRANT SELECT, INSERT, UPDATE ON public.weekly_settlement  TO anon;
+GRANT SELECT, INSERT, UPDATE ON public.advance_txn        TO anon;
+GRANT SELECT, INSERT, UPDATE ON public.payment            TO anon;
+GRANT SELECT, INSERT, UPDATE ON public.adjustment         TO anon;
+GRANT SELECT, INSERT, UPDATE ON public.audit_log          TO anon;
+GRANT SELECT, INSERT, UPDATE ON public.app_user           TO anon;
+GRANT SELECT, INSERT, UPDATE ON public.settings           TO anon;
