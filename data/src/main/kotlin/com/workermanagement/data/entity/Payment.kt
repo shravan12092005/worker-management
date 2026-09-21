@@ -42,5 +42,6 @@ data class Payment(
     val method: PaymentMethod,
     val note: String? = null,
     @ColumnInfo(name = "is_void", defaultValue = "0") val isVoid: Boolean = false,
-    @ColumnInfo(name = "created_at") val createdAt: String
+    @ColumnInfo(name = "created_at") val createdAt: String,
+    @ColumnInfo(name = "synced", defaultValue = "0") val synced: Boolean = false
 )

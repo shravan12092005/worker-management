@@ -53,5 +53,6 @@ data class WeeklySettlement(
     @ColumnInfo(name = "advance_deduction") val advanceDeduction: Int,
     @ColumnInfo(name = "net_payable") val netPayable: Int,
     val status: SettlementStatus,
-    @ColumnInfo(name = "finalized_at") val finalizedAt: String
+    @ColumnInfo(name = "finalized_at") val finalizedAt: String,
+    @ColumnInfo(name = "synced", defaultValue = "0") val synced: Boolean = false
 )

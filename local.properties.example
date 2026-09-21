@@ -1,0 +1,12 @@
+# Copy this file to local.properties and fill in the real values.
+# local.properties is git-ignored and must NEVER be committed.
+# Get these values from the Supabase project dashboard → Settings → API.
+
+sdk.dir=/path/to/your/android/sdk
+
+# Supabase REST API base URL (includes /rest/v1/ trailing slash)
+SUPABASE_URL=https://<your-project-ref>.supabase.co/rest/v1/
+
+# Supabase anon/public key — safe to use in client code.
+# Do NOT use the service_role key here — it bypasses Row Level Security.
+SUPABASE_ANON_KEY=sb_publishable_<your-anon-key>

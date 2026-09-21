@@ -16,5 +16,6 @@ import androidx.room.PrimaryKey
 data class Role(
     @PrimaryKey val id: String,
     val name: String,
-    @ColumnInfo(name = "is_active") val isActive: Boolean = true
+    @ColumnInfo(name = "is_active") val isActive: Boolean = true,
+    @ColumnInfo(name = "synced", defaultValue = "0") val synced: Boolean = false
 )

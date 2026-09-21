@@ -56,5 +56,6 @@ data class AdvanceTxn(
     val amount: Int,                                           // always positive
     @ColumnInfo(name = "settlement_id") val settlementId: String? = null,
     val note: String? = null,
-    @ColumnInfo(name = "created_at") val createdAt: String
+    @ColumnInfo(name = "created_at") val createdAt: String,
+    @ColumnInfo(name = "synced", defaultValue = "0") val synced: Boolean = false
 )

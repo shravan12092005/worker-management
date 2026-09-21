@@ -49,5 +49,6 @@ data class AuditLog(
     @ColumnInfo(name = "old_value") val oldValue: String?,
     @ColumnInfo(name = "new_value") val newValue: String?,
     @ColumnInfo(name = "changed_by") val changedBy: String,
-    @ColumnInfo(name = "changed_at") val changedAt: String
+    @ColumnInfo(name = "changed_at") val changedAt: String,
+    @ColumnInfo(name = "synced", defaultValue = "0") val synced: Boolean = false
 )

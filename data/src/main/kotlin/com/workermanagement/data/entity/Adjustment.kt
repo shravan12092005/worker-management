@@ -55,5 +55,6 @@ data class Adjustment(
     val amount: Int,  // signed — positive = owed to worker, negative = worker overpaid
     val reason: String,
     @ColumnInfo(name = "created_at") val createdAt: String,
-    @ColumnInfo(name = "settled_in_settlement_id") val settledInSettlementId: String? = null
+    @ColumnInfo(name = "settled_in_settlement_id") val settledInSettlementId: String? = null,
+    @ColumnInfo(name = "synced", defaultValue = "0") val synced: Boolean = false
 )

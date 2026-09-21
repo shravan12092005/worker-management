@@ -46,5 +46,6 @@ data class Settings(
     @ColumnInfo(name = "absent_value") val absentValue: Int = 0,
     @ColumnInfo(name = "overtime_entry") val overtimeEntry: String = "FLAT_AMOUNT",
     @ColumnInfo(name = "allow_two_sites_one_day") val allowTwoSitesOneDay: Boolean = false,
-    @ColumnInfo(name = "allow_two_roles_one_day") val allowTwoRolesOneDay: Boolean = false
+    @ColumnInfo(name = "allow_two_roles_one_day") val allowTwoRolesOneDay: Boolean = false,
+    @ColumnInfo(name = "synced", defaultValue = "0") val synced: Boolean = false
 )

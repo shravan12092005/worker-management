@@ -45,5 +45,6 @@ data class Worker(
     @ColumnInfo(name = "joining_date") val joiningDate: String,  // "yyyy-MM-dd"
     @ColumnInfo(name = "is_active") val isActive: Boolean = true,
     @ColumnInfo(name = "created_at") val createdAt: String,      // ISO-8601
-    @ColumnInfo(name = "updated_at") val updatedAt: String       // ISO-8601
+    @ColumnInfo(name = "updated_at") val updatedAt: String,      // ISO-8601
+    @ColumnInfo(name = "synced", defaultValue = "0") val synced: Boolean = false
 )

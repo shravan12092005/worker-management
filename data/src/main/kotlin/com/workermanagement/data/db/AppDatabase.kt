@@ -1,5 +1,6 @@
 package com.workermanagement.data.db
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -14,6 +15,7 @@ import com.workermanagement.data.dao.SettlementDao
 import com.workermanagement.data.dao.SettingsDao
 import com.workermanagement.data.dao.SiteDao
 import com.workermanagement.data.dao.WorkerDao
+import com.workermanagement.data.sync.SyncDao
 import com.workermanagement.data.entity.AdvanceTxn
 import com.workermanagement.data.entity.Adjustment
 import com.workermanagement.data.entity.AppUser
@@ -40,8 +42,14 @@ import com.workermanagement.data.entity.Worker
         AppUser::class,
         Settings::class,
     ],
-    version = 1,
-    exportSchema = true
+    version = 2,
+    exportSchema = true,
+    autoMigrations = [
+        // Adds `synced INTEGER NOT NULL DEFAULT 0` to 10 tables.
+        // @ColumnInfo(defaultValue = "0") on each entity field is required for
+        // AutoMigration to generate this ALTER TABLE statement correctly.
+        AutoMigration(from = 1, to = 2)
+    ]
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -57,6 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun auditLogDao(): AuditLogDao
     abstract fun appUserDao(): AppUserDao
     abstract fun settingsDao(): SettingsDao
+    abstract fun syncDao(): SyncDao
 
     companion object {
         /**

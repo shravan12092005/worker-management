@@ -20,5 +20,6 @@ data class Site(
     val location: String? = null,
     @ColumnInfo(name = "is_active") val isActive: Boolean = true,
     @ColumnInfo(name = "created_at") val createdAt: String,
-    @ColumnInfo(name = "updated_at") val updatedAt: String
+    @ColumnInfo(name = "updated_at") val updatedAt: String,
+    @ColumnInfo(name = "synced", defaultValue = "0") val synced: Boolean = false
 )
