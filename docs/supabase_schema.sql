@@ -172,19 +172,42 @@ CREATE TABLE IF NOT EXISTS settings (
 -- ─── Grants for the anon role ────────────────────────────────
 -- Supabase denies all access to new tables by default even without RLS.
 -- These grants allow the anon key (used by SyncManager) to push data.
--- Grants are narrow: SELECT + INSERT + UPDATE only — no DELETE.
--- DELETE is intentionally omitted: the data model never deletes rows (G-2).
+-- SELECT + INSERT + UPDATE: matches what SyncManager does (push-only sync).
+-- DELETE: required for SyncManagerIntegrationTest teardown — without it,
+--   test rows accumulate and unique-constraint violations block future runs.
+--   The app itself never deletes rows (rule G-2); DELETE is only used by
+--   the test harness for cleanup.
 -- When RLS is enabled as a follow-up, add row-level policies and these
 -- broad grants can be narrowed or removed accordingly.
 
-GRANT SELECT, INSERT, UPDATE ON public.role               TO anon;
-GRANT SELECT, INSERT, UPDATE ON public.site               TO anon;
-GRANT SELECT, INSERT, UPDATE ON public.worker             TO anon;
-GRANT SELECT, INSERT, UPDATE ON public.daily_record       TO anon;
-GRANT SELECT, INSERT, UPDATE ON public.weekly_settlement  TO anon;
-GRANT SELECT, INSERT, UPDATE ON public.advance_txn        TO anon;
-GRANT SELECT, INSERT, UPDATE ON public.payment            TO anon;
-GRANT SELECT, INSERT, UPDATE ON public.adjustment         TO anon;
-GRANT SELECT, INSERT, UPDATE ON public.audit_log          TO anon;
-GRANT SELECT, INSERT, UPDATE ON public.app_user           TO anon;
-GRANT SELECT, INSERT, UPDATE ON public.settings           TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.role               TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.site               TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.worker             TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.daily_record       TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.weekly_settlement  TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.advance_txn        TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.payment            TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.adjustment         TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.audit_log          TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.app_user           TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.settings           TO anon;
+
+-- ─── Disable RLS (until auth is implemented) ─────────────────
+-- Supabase enables RLS on all new tables by default.
+-- Even with GRANTs in place, an enabled RLS with no permissive
+-- policy blocks every anon operation with code 42501.
+-- Auth (app_user sync + real login) is a follow-up task; there is
+-- no user identity to write policies against yet.
+-- Re-enable with proper per-user policies once auth lands.
+
+ALTER TABLE public.role              DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site              DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.worker            DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.daily_record      DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.weekly_settlement DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.advance_txn       DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payment           DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.adjustment        DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_log         DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.app_user          DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.settings          DISABLE ROW LEVEL SECURITY;
