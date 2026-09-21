@@ -157,7 +157,7 @@ Assignment and attendance are separate concepts: a record may exist with a `site
 | `txn_date` | date | |
 | `type` | enum | `ADVANCE_GIVEN` \| `DEDUCTION` \| `WRITE_OFF` |
 | `amount` | int | Always positive; `type` carries the sign |
-| `payment_id` | FK → `payment`, nullable | Set when a deduction is part of a weekly payment |
+| `settlement_id` | FK → `weekly_settlement`, nullable | Set when the deduction is applied as part of a weekly settlement |
 | `note` | text, nullable | |
 | `created_at` | timestamp | |
 

@@ -292,16 +292,19 @@ class PersistenceTest {
         assertNotNull(retrieved2)
         assertEquals("SUNDAY", retrieved2!!.weekStartDay)
 
-        // Confirm only one row in the table
-        // (direct count query to catch any accidental second row)
-        // We verify indirectly: get() uses WHERE singleton_id = 1 which would
-        // return the first match; so we also assert via row count.
-        // Room doesn't expose raw cursor here without a @Query, so we verify
-        // that the value is what the second upsert set, which is only possible
-        // if there's one row with the updated value.
-        assertEquals(
-            "Settings must have exactly the upserted weekStartDay",
-            "SUNDAY", retrieved2.weekStartDay
-        )
+        // Confirm exactly ONE row exists in the settings table via raw SQL.
+        // This catches a bug where REPLACE silently inserts a second row
+        // instead of overwriting — which get() (WHERE singleton_id = 1) would
+        // not detect because it only ever returns the first match.
+        val cursor = db.openHelper.readableDatabase
+            .query("SELECT COUNT(*) FROM settings")
+        cursor.use {
+            it.moveToFirst()
+            val rowCount = it.getInt(0)
+            assertEquals(
+                "settings table must contain exactly 1 row after two upserts",
+                1, rowCount
+            )
+        }
     }
 }
