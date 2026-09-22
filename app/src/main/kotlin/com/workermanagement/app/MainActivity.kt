@@ -15,6 +15,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.workermanagement.app.db.DatabaseProvider
 import com.workermanagement.app.db.DatabaseSeeder
+import com.workermanagement.app.ui.attendance.AttendanceScreen
+import com.workermanagement.app.ui.attendance.AttendanceViewModel
 import com.workermanagement.app.ui.navigation.BottomNavBar
 import com.workermanagement.app.ui.navigation.Screen
 import com.workermanagement.app.ui.role.RoleListScreen
@@ -48,20 +50,22 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = Screen.Workers.route,
+                        startDestination = Screen.Attendance.route,
                         modifier = Modifier.padding(innerPadding)
                     ) {
-                        // ── Home (placeholder — replaced in Step 6) ──────
-                        composable(Screen.Home.route) {
-                            WorkerListScreen(
-                                vm = viewModel(factory = WorkerViewModel.Factory(dbRef)),
-                                onAddWorker = { navController.navigate(Screen.AddWorker.route) },
-                                onWorkerClick = { w ->
-                                    navController.navigate("workers/${w.id}")
-                                }
+                        // ── Attendance ───────────────────────────────────────
+                        composable(Screen.Attendance.route) {
+                            AttendanceScreen(
+                                vm = viewModel(factory = AttendanceViewModel.Factory(dbRef))
                             )
                         }
 
+                        // ── Home (kept for back-compat, redirects to attendance) ─
+                        composable(Screen.Home.route) {
+                            AttendanceScreen(
+                                vm = viewModel(factory = AttendanceViewModel.Factory(dbRef))
+                            )
+                        }
                         // ── Workers ──────────────────────────────────────
                         composable(Screen.Workers.route) {
                             val workerVm: WorkerViewModel =
