@@ -37,7 +37,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +47,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -155,7 +156,7 @@ fun SettlementScreen(vm: SettlementViewModel) {
 
             // ── Already-finalized banner ─────────────────────────────────────
             if (uiState.existingSettlement != null) {
-                item { FinalizedBanner(uiState.existingSettlement!!.finalizedAt) }
+                item { FinalizedBanner() }
             }
 
             // ── Day-by-day breakdown ─────────────────────────────────────────
@@ -207,6 +208,19 @@ fun SettlementScreen(vm: SettlementViewModel) {
                         deduction = s.advanceDeduction,
                         net       = s.netPayable,
                         status    = s.status.name,
+                    )
+                }
+            }
+
+            // ── Pending adjustments (J-5) ─────────────────────────────────────
+            // Only shown before finalization and when prior unsettled adjustments exist.
+            if (uiState.existingSettlement == null && uiState.pendingAdjustments.isNotEmpty()) {
+                item {
+                    PendingAdjustmentsCard(
+                        adjustmentSum     = uiState.adjustmentSum,
+                        count             = uiState.pendingAdjustments.size,
+                        included          = uiState.includeAdjustments,
+                        onToggle          = vm::toggleIncludeAdjustments,
                     )
                 }
             }
@@ -303,7 +317,7 @@ fun SettlementScreen(vm: SettlementViewModel) {
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("This will lock all daily records for this week. Editing will require the correction flow.")
-                    Divider()
+                    HorizontalDivider()
                     LabelValue("Gross earnings", "₹${uiState.grossEarnings}")
                     LabelValue("Advance deduction", "₹${uiState.deductionInput.trim().toIntOrNull() ?: 0}")
                     LabelValue("Net payable", "₹$net")
@@ -421,10 +435,10 @@ private fun BreakdownTable(dayRows: List<DayRow>) {
                         modifier = Modifier.weight(if (h == "Date") 1.6f else 1f))
                 }
             }
-            Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
             dayRows.forEachIndexed { idx, row ->
-                if (idx > 0) Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                if (idx > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
                 DayRowItem(row)
             }
         }
@@ -493,12 +507,12 @@ private fun EarningsSummaryCard(base: Int, overtime: Int, gross: Int) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Earnings", style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-            EarningsRow("Base earnings (C-4)", "₹$base")
-            EarningsRow("Overtime earnings (C-5)", "₹$overtime",
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            EarningsRow("Base earnings", "₹$base")
+            EarningsRow("Overtime earnings", "₹$overtime",
                 color = MaterialTheme.colorScheme.tertiary)
-            Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-            EarningsRow("Gross earnings (C-6)", "₹$gross",
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            EarningsRow("Gross earnings", "₹$gross",
                 color = GreenAccent, bold = true)
         }
     }
@@ -588,9 +602,9 @@ private fun DeductionCard(
 
             // Net payable summary line
             if (state is DeductionState.Valid) {
-                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Net payable (S-5)",
+                    Text("Net payable",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold)
                     Text("₹${state.net}",
@@ -613,9 +627,9 @@ private fun SnapshotCard(deduction: Int, net: Int, status: String) {
         elevation = CardDefaults.cardElevation(2.dp),
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Settlement snapshot (S-4)", style = MaterialTheme.typography.labelLarge,
+            Text("Settlement summary", style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
             EarningsRow("Advance deduction", "₹$deduction")
             EarningsRow("Net payable", "₹$net", color = GreenAccent, bold = true)
             EarningsRow("Status", status)
@@ -626,7 +640,7 @@ private fun SnapshotCard(deduction: Int, net: Int, status: String) {
 // ─── Finalized banner ─────────────────────────────────────────────────────────
 
 @Composable
-private fun FinalizedBanner(finalizedAt: String) {
+private fun FinalizedBanner() {
     Row(
         Modifier
             .fillMaxWidth()
@@ -701,3 +715,64 @@ private fun shortDate(date: String): String = try {
     LocalDate.parse(date)
         .format(DateTimeFormatter.ofPattern("EEE d MMM"))
 } catch (_: Exception) { date }
+
+// ─── Pending adjustments card (J-5) ──────────────────────────────────────────
+
+@Composable
+private fun PendingAdjustmentsCard(
+    adjustmentSum: Int,
+    count: Int,
+    included: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    val sign   = if (adjustmentSum >= 0) "+" else ""
+    val color  = if (adjustmentSum >= 0) GreenAccent else AmberAccent
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = CardBg),
+        elevation = CardDefaults.cardElevation(2.dp),
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                "Pending adjustments",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            Text(
+                "$count prior-week correction(s) totalling ${sign}₹${kotlin.math.abs(adjustmentSum)} are unsettled.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onToggle(!included) }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Checkbox(
+                    checked  = included,
+                    onCheckedChange = onToggle,
+                )
+                Column {
+                    Text(
+                        "Include in this settlement",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Text(
+                        "Net payable will be adjusted by ${sign}₹${kotlin.math.abs(adjustmentSum)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = color,
+                    )
+                }
+            }
+        }
+    }
+}

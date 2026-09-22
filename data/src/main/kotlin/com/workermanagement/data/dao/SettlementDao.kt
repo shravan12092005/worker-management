@@ -19,6 +19,14 @@ interface SettlementDao {
     @Query("SELECT * FROM weekly_settlement WHERE id = :id")
     fun getById(id: String): WeeklySettlement?
 
+    /**
+     * All settlements, newest first — used by the Payments screen to list
+     * settlements by derived status (PaymentViewModel derives status via
+     * WageEngine.settlementStatus; it is never read from this column).
+     */
+    @Query("SELECT * FROM weekly_settlement ORDER BY week_start_date DESC, worker_id ASC")
+    fun getAllSettlements(): List<WeeklySettlement>
+
     @Query("""
         SELECT * FROM weekly_settlement
         WHERE worker_id = :workerId AND week_start_date = :weekStartDate

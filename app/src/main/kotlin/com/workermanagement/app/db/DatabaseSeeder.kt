@@ -113,7 +113,6 @@ object DatabaseSeeder {
 
     private fun seedWorkers(db: AppDatabase) {
         val existing = db.workerDao().getAll().map { it.id }.toSet()
-        val now = "2026-01-01T00:00:00Z"
         listOf(
             worker(WORKER_RAVI_UUID,   "W001", "Ravi Kumar",   ROLE_MASON_UUID,       900, "2026-01-01"),
             worker(WORKER_SURESH_UUID, "W002", "Suresh Patil", ROLE_MASON_UUID,       900, "2026-01-01"),

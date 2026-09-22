@@ -27,6 +27,20 @@ interface AdjustmentDao {
     fun getPendingAdjustments(): List<Adjustment>
 
     /**
+     * Pending adjustments for a specific worker (J-5, SettlementViewModel).
+     * Joins through weekly_settlement to filter by worker_id at the DB level
+     * rather than fetching all rows and filtering in Kotlin.
+     */
+    @Query("""
+        SELECT a.* FROM adjustment a
+        INNER JOIN weekly_settlement ws ON ws.id = a.settlement_id
+        WHERE a.settled_in_settlement_id IS NULL
+          AND ws.worker_id = :workerId
+        ORDER BY a.created_at ASC
+    """)
+    fun getPendingAdjustmentsForWorker(workerId: String): List<Adjustment>
+
+    /**
      * Marks an adjustment as settled in a later week's settlement (J-5).
      */
     @Query("""

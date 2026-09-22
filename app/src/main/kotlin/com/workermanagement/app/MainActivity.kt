@@ -19,6 +19,8 @@ import com.workermanagement.app.ui.attendance.AttendanceScreen
 import com.workermanagement.app.ui.attendance.AttendanceViewModel
 import com.workermanagement.app.ui.navigation.BottomNavBar
 import com.workermanagement.app.ui.navigation.Screen
+import com.workermanagement.app.ui.payment.PaymentScreen
+import com.workermanagement.app.ui.payment.PaymentViewModel
 import com.workermanagement.app.ui.role.RoleListScreen
 import com.workermanagement.app.ui.role.RoleViewModel
 import com.workermanagement.app.ui.settlement.SettlementScreen
@@ -73,6 +75,13 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.Settlement.route) {
                             SettlementScreen(
                                 vm = viewModel(factory = SettlementViewModel.Factory(dbRef))
+                            )
+                        }
+
+                        // ── Payments ─────────────────────────────────────────
+                        composable(Screen.Payments.route) {
+                            PaymentScreen(
+                                vm = viewModel(factory = PaymentViewModel.Factory(dbRef))
                             )
                         }
 

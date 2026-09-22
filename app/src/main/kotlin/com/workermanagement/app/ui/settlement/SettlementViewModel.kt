@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.workermanagement.data.db.AppDatabase
+import com.workermanagement.data.entity.Adjustment
 import com.workermanagement.data.entity.AdvanceTxn
 import com.workermanagement.data.entity.AdvanceTxnType
 import com.workermanagement.data.entity.DailyRecord
@@ -54,6 +55,10 @@ data class SettlementUiState(
     val deductionInput: String = "0",
     val deductionState: DeductionState = DeductionState.None,
     val existingSettlement: WeeklySettlement? = null,
+    // J-5: pending (unsettled) adjustments from prior weeks for this worker
+    val pendingAdjustments: List<Adjustment> = emptyList(),
+    val includeAdjustments: Boolean = false,
+    val adjustmentSum: Int = 0,    // signed sum — may be negative (worker overpaid before)
     val isSaving: Boolean = false,
     val saveError: String? = null,
     val saveSuccess: Boolean = false,
@@ -153,17 +158,25 @@ class SettlementViewModel(private val db: AppDatabase) : ViewModel() {
             val advanceBalance = db.advanceTxnDao().getAdvanceBalance(worker.id)
             val existing       = db.settlementDao().getByWorkerAndWeek(worker.id, weekStartDate)
 
+            // J-5: fetch pending adjustments from prior finalized weeks for this worker.
+            // Uses a DB-level JOIN on weekly_settlement — no Kotlin-side filtering.
+            val pendingAdj   = db.adjustmentDao().getPendingAdjustmentsForWorker(worker.id)
+            val adjustmentSum = pendingAdj.sumOf { it.amount }  // signed; positive = owed to worker
+
             _uiState.value = SettlementUiState(
-                worker           = worker,
-                weekStartDate    = weekStartDate,
-                dayRows          = dayRows,
-                baseEarnings     = baseEarnings,
-                overtimeEarnings = overtimeEarnings,
-                grossEarnings    = grossEarnings,
-                advanceBalance   = advanceBalance,
-                deductionInput   = "0",
-                deductionState   = validateDeduction("0", advanceBalance, grossEarnings),
+                worker             = worker,
+                weekStartDate      = weekStartDate,
+                dayRows            = dayRows,
+                baseEarnings       = baseEarnings,
+                overtimeEarnings   = overtimeEarnings,
+                grossEarnings      = grossEarnings,
+                advanceBalance     = advanceBalance,
+                deductionInput     = "0",
+                deductionState     = validateDeduction("0", advanceBalance, grossEarnings),
                 existingSettlement = existing,
+                pendingAdjustments = pendingAdj,
+                includeAdjustments = false,
+                adjustmentSum      = adjustmentSum,
             )
         }
     }
@@ -176,6 +189,14 @@ class SettlementViewModel(private val db: AppDatabase) : ViewModel() {
             deductionInput = raw,
             deductionState = validateDeduction(raw, s.advanceBalance, s.grossEarnings),
         )
+    }
+
+    /**
+     * J-5: contractor chooses whether to include pending adjustments in this
+     * week's net payable. Toggling recomputes the net shown in the UI.
+     */
+    fun toggleIncludeAdjustments(include: Boolean) {
+        _uiState.value = _uiState.value.copy(includeAdjustments = include)
     }
 
     /**
@@ -204,13 +225,16 @@ class SettlementViewModel(private val db: AppDatabase) : ViewModel() {
         val s      = _uiState.value
         val worker = s.worker ?: return
         if (s.existingSettlement != null) {
-            _uiState.value = s.copy(saveError = "This week is already finalized (S-2)")
+            _uiState.value = s.copy(saveError = "This week is already finalized")
             return
         }
         val deduction = s.deductionInput.trim().toIntOrNull() ?: 0
         val validState = s.deductionState as? DeductionState.Valid
             ?: run { _uiState.value = s.copy(saveError = "Fix the deduction before finalizing"); return }
-        val net = validState.net
+        // J-5: if contractor chose to include pending adjustments, add their signed sum.
+        // adjustmentSum may be negative (overpayment correction), never let net go below 0.
+        val baseNet = validState.net
+        val net = if (s.includeAdjustments) maxOf(0, baseNet + s.adjustmentSum) else baseNet
 
         _uiState.value = s.copy(isSaving = true, saveError = null)
 
@@ -254,6 +278,14 @@ class SettlementViewModel(private val db: AppDatabase) : ViewModel() {
 
                 // S-3: lock daily records
                 db.dailyRecordDao().lockWeekForWorker(worker.id, s.weekStartDate, now)
+
+                // J-5: mark each included pending adjustment as settled in this settlement.
+                // adjustmentDao().markSettled() is a simple UPDATE — no FK cascade issues.
+                if (s.includeAdjustments) {
+                    s.pendingAdjustments.forEach { adj ->
+                        db.adjustmentDao().markSettled(adj.id, settlementId)
+                    }
+                }
 
                 loadDetail(worker, s.weekStartDate)
                 _uiState.value = _uiState.value.copy(isSaving = false, saveSuccess = true)
