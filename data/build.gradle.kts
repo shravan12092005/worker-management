@@ -69,8 +69,8 @@ dependencies {
     // HTTP client for SyncManager — used in main source (not test-only)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    // Wage engine (pure Kotlin root module) — used in the round-trip test
-    implementation(project(":"))
+    // Wage engine — pure Kotlin JVM subproject (no Android deps)
+    implementation(project(":wages"))
 
     // Test
     testImplementation("junit:junit:4.13.2")

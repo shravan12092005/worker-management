@@ -15,5 +15,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "worker-management"
+include(":wages")
 include(":data")
 include(":app")

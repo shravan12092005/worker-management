@@ -38,11 +38,20 @@ android {
         // Matches Kotlin 1.9.22
         kotlinCompilerExtensionVersion = "1.5.8"
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
-    // Existing data layer (entities, DAOs, AppDatabase)
+    // Data layer (entities, DAOs, AppDatabase)
     implementation(project(":data"))
+
+    // Wage engine — pure Kotlin JVM, no Android deps
+    implementation(project(":wages"))
 
     // Room runtime — needed for Room.databaseBuilder in :app
     implementation("androidx.room:room-runtime:2.6.1")
@@ -66,4 +75,10 @@ dependencies {
     // Activity
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.core:core-ktx:1.12.0")
+
+    // Test — in-memory Room integration tests (Robolectric, JUnit 4)
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("androidx.room:room-testing:2.6.1")
 }
