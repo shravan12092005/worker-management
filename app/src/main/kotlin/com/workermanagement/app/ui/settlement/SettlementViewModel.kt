@@ -285,16 +285,19 @@ class SettlementViewModel(private val db: AppDatabase) : ViewModel() {
  * Maps a Room [DailyRecord] (from :data) to a [wages.DailyRecord] (from :wages)
  * so that WageEngine's pure functions can be called without knowing about Room.
  *
+ * `internal` so the :app test source set can import the real function rather
+ * than maintaining a copy — that's what makes the integration test meaningful.
+ *
  * This is the only place where the two namespaces touch. The mapping is
  * mechanical: same field names, different packages.
  */
-private fun DailyRecord.toWageRecord(): WageDailyRecord = WageDailyRecord(
+internal fun DailyRecord.toWageRecord(): WageDailyRecord = WageDailyRecord(
     wage           = wage,
     attendance     = attendance.toWageAttendance(),
     overtimeAmount = overtimeAmount,
 )
 
-private fun RoomAttendance.toWageAttendance(): WageAttendance = when (this) {
+internal fun RoomAttendance.toWageAttendance(): WageAttendance = when (this) {
     RoomAttendance.PRESENT  -> WageAttendance.PRESENT
     RoomAttendance.HALF_DAY -> WageAttendance.HALF_DAY
     RoomAttendance.ABSENT   -> WageAttendance.ABSENT

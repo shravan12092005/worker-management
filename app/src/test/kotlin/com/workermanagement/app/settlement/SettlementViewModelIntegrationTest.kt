@@ -16,8 +16,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import wages.WageEngine
-import wages.DailyRecord as WageDailyRecord
-import wages.Attendance as WageAttendance
+import com.workermanagement.app.ui.settlement.toWageRecord
 
 /**
  * Integration test: verifies the dependency path that SettlementViewModel
@@ -177,18 +176,4 @@ class SettlementViewModelIntegrationTest {
         createdAt       = "2026-09-14T06:00:00Z",
         updatedAt       = "2026-09-14T06:00:00Z",
     )
-}
-
-// ── Room → WageEngine adapter (same logic as in SettlementViewModel) ─────────
-
-private fun DailyRecord.toWageRecord(): WageDailyRecord = WageDailyRecord(
-    wage           = wage,
-    attendance     = attendance.toWageAttendance(),
-    overtimeAmount = overtimeAmount,
-)
-
-private fun Attendance.toWageAttendance(): WageAttendance = when (this) {
-    Attendance.PRESENT  -> WageAttendance.PRESENT
-    Attendance.HALF_DAY -> WageAttendance.HALF_DAY
-    Attendance.ABSENT   -> WageAttendance.ABSENT
 }
