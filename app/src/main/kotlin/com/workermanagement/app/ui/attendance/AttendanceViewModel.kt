@@ -24,12 +24,18 @@ import java.util.UUID
  * One row in the attendance list.
  * [existingRecord] is null when the worker has been added from search but
  * no daily_record exists yet. On save, a new record is inserted.
+ *
+ * [attendance] is nullable:
+ *   - Non-null when loaded from an existing DB record (preserves stored value).
+ *   - null for every row that was pre-filled from yesterday or added via search
+ *     — the user MUST explicitly tap P / HD / A before the row can be saved
+ *     (D-4: assigning a worker to a site MUST NOT imply Present).
  */
 data class WorkerAttendanceRow(
     val worker: Worker,
-    val existingRecord: DailyRecord?,   // null → new record on save
+    val existingRecord: DailyRecord?,   // null → insert on save
     // Editable draft fields (not persisted until save())
-    val attendance: Attendance = existingRecord?.attendance ?: Attendance.PRESENT,
+    val attendance: Attendance? = existingRecord?.attendance, // null = not yet marked
     val roleId: String = existingRecord?.roleId ?: worker.defaultRoleId,
     val wage: Int = existingRecord?.wage ?: worker.defaultWage,
     val overtimeAmount: Int = existingRecord?.overtimeAmount ?: 0,
@@ -217,7 +223,8 @@ class AttendanceViewModel(private val db: AppDatabase) : ViewModel() {
         _rows.value = (_rows.value + WorkerAttendanceRow(
             worker = worker,
             existingRecord = null,
-            attendance = Attendance.PRESENT,
+            // D-4: attendance is null — user must explicitly tap P/HD/A
+            attendance = null,
             roleId = worker.defaultRoleId,
             wage = worker.defaultWage,
         )).sortedBy { it.worker.name }
@@ -228,8 +235,17 @@ class AttendanceViewModel(private val db: AppDatabase) : ViewModel() {
 
     /**
      * Flushes all in-memory drafts to Room.
-     * Validates D-5 and D-6 per row before touching the DB.
-     * Skips locked rows (they must go through the correction flow).
+     *
+     * Upsert semantics: re-queries the DB at the start of each call so that
+     * calling save() twice (e.g. tapping Save, changing a value, tapping Save
+     * again) always updates the existing record rather than attempting a second
+     * INSERT that would fail D-1.
+     *
+     * Validates before writing:
+     *   - Blocks the entire save if any unlocked row has attendance == null
+     *     (user must explicitly mark every row — D-4).
+     *   - D-5: rejects future work dates.
+     *   - D-6: skips rows where work_date < worker.joining_date.
      */
     fun save() {
         val site = _selectedSite.value ?: return
@@ -238,9 +254,18 @@ class AttendanceViewModel(private val db: AppDatabase) : ViewModel() {
         val workDate = LocalDate.parse(date)
         val now = Instant.now().toString()
 
-        // D-5: block future dates
+        // D-5: block future dates (checked on UI thread before launching coroutine)
         if (workDate.isAfter(today)) {
             _error.value = "Cannot record attendance for a future date (rule D-5)"
+            return
+        }
+
+        // Block save if any unlocked row has no attendance value set yet
+        val unset = _rows.value.filter { !it.isLocked && it.attendance == null }
+        if (unset.isNotEmpty()) {
+            val names = unset.take(3).joinToString { it.worker.name }
+            val extra = if (unset.size > 3) " and ${unset.size - 3} more" else ""
+            _error.value = "Mark attendance for: $names$extra"
             return
         }
 
@@ -248,21 +273,30 @@ class AttendanceViewModel(private val db: AppDatabase) : ViewModel() {
             val settings = db.settingsDao().get()
             val weekStartDate = computeWeekStart(workDate, settings?.weekStartDay ?: "MONDAY")
 
+            // ── True upsert: re-query DB now, not from stale in-memory existingRecord.
+            // This handles: double-tap Save, concurrent coroutine, any stale state.
+            val freshRecords: Map<String, DailyRecord> = db.dailyRecordDao()
+                .getRecordsForSiteOnDate(site.id, date)
+                .associateBy { it.workerId }
+
             var errorMsg: String? = null
 
             for (row in _rows.value) {
-                if (row.isLocked) continue   // locked rows are read-only
+                if (row.isLocked) continue   // locked rows → correction flow only
+                val attendance = row.attendance ?: continue   // guarded above, skip anyway
 
-                // D-6: block dates before joining_date
+                // D-6: skip rows where work_date is before the worker's joining_date
                 val joiningDate = LocalDate.parse(row.worker.joiningDate)
                 if (workDate.isBefore(joiningDate)) {
                     errorMsg = "${row.worker.name}: work date is before joining date (${row.worker.joiningDate})"
                     continue
                 }
 
-                val existing = row.existingRecord
-                if (existing == null) {
-                    // New record — INSERT
+                // Prefer the fresh DB record; fall back to what was loaded at list-build time
+                val existingInDb = freshRecords[row.worker.id] ?: row.existingRecord
+
+                if (existingInDb == null) {
+                    // No record yet — INSERT
                     try {
                         db.dailyRecordDao().insert(
                             DailyRecord(
@@ -273,7 +307,7 @@ class AttendanceViewModel(private val db: AppDatabase) : ViewModel() {
                                 siteId = site.id,
                                 roleId = row.roleId,
                                 wage = row.wage,
-                                attendance = row.attendance,
+                                attendance = attendance,
                                 overtimeAmount = row.overtimeAmount,
                                 note = row.note.ifBlank { null },
                                 createdAt = now,
@@ -284,13 +318,13 @@ class AttendanceViewModel(private val db: AppDatabase) : ViewModel() {
                         errorMsg = "Save failed for ${row.worker.name}: ${e.message}"
                     }
                 } else {
-                    // Existing record — UPDATE (D-2: store copy of values)
+                    // Record exists — UPDATE (D-2: values are the copy on the record)
                     db.dailyRecordDao().update(
-                        existing.copy(
+                        existingInDb.copy(
                             siteId = site.id,
                             roleId = row.roleId,
                             wage = row.wage,
-                            attendance = row.attendance,
+                            attendance = attendance,
                             overtimeAmount = row.overtimeAmount,
                             note = row.note.ifBlank { null },
                             updatedAt = now,
@@ -306,7 +340,7 @@ class AttendanceViewModel(private val db: AppDatabase) : ViewModel() {
                 _saveSuccess.value = true
             }
 
-            // Reload to sync in-memory state with DB
+            // Reload to sync in-memory state with DB (updates existingRecord refs)
             loadRows()
         }
     }

@@ -172,6 +172,7 @@ fun AttendanceScreen(vm: AttendanceViewModel) {
                 // ── Mark-all bar ─────────────────────────────────────────────
                 MarkAllBar(
                     workerCount = rows.size,
+                    unsetCount = rows.count { !it.isLocked && it.attendance == null },
                     onMarkAllPresent = { vm.markAllPresent() },
                     onAddWorker = { showAddWorker = true },
                 )
@@ -412,7 +413,8 @@ private fun AttendanceHeader(
 
 @Composable
 private fun MarkAllBar(
-    workerCount: Int, onMarkAllPresent: () -> Unit, onAddWorker: () -> Unit,
+    workerCount: Int, unsetCount: Int,
+    onMarkAllPresent: () -> Unit, onAddWorker: () -> Unit,
 ) {
     Row(
         Modifier
@@ -421,16 +423,26 @@ private fun MarkAllBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TextButton(
-            onClick = onMarkAllPresent,
-            enabled = workerCount > 0,
-            colors = ButtonDefaults.textButtonColors(
-                contentColor = MaterialTheme.colorScheme.tertiary
-            )
-        ) {
-            Icon(Icons.Default.DoneAll, null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Mark all present")
+        Column {
+            TextButton(
+                onClick = onMarkAllPresent,
+                enabled = workerCount > 0,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.tertiary
+                )
+            ) {
+                Icon(Icons.Default.DoneAll, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Mark all present")
+            }
+            if (unsetCount > 0) {
+                Text(
+                    "$unsetCount row${if (unsetCount == 1) "" else "s"} not yet marked",
+                    modifier = Modifier.padding(start = 12.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = HalfDayColor
+                )
+            }
         }
         TextButton(onClick = onAddWorker) {
             Icon(Icons.Default.PersonSearch, null, modifier = Modifier.size(18.dp))
@@ -486,6 +498,11 @@ private fun WorkerAttendanceCard(
                                 modifier = Modifier.size(14.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                        if (row.attendance == null) {
+                            Text("· mark",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = HalfDayColor)
+                        }
                     }
                     val roleName = roles.firstOrNull { it.id == row.roleId }?.name ?: ""
                     Text("$roleName  ·  ₹${row.wage}/day",
@@ -540,25 +557,30 @@ private fun WorkerAttendanceCard(
 
 // ─── Attendance chips (P / HD / A) ────────────────────────────────────────────
 
+/**
+ * [current] is nullable: null = unset (D-4 compliance — not yet marked).
+ * When null all three chips show with an amber border to signal action required.
+ */
 @Composable
 private fun AttendanceChips(
-    current: Attendance,
+    current: Attendance?,
     locked: Boolean,
     onSelect: (Attendance) -> Unit,
 ) {
+    val unset = current == null
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         AttendanceChip(
-            label = "P", selected = current == Attendance.PRESENT,
+            label = "P", selected = current == Attendance.PRESENT, unset = unset,
             selectedColor = PresentColor, locked = locked,
             onClick = { onSelect(Attendance.PRESENT) }
         )
         AttendanceChip(
-            label = "HD", selected = current == Attendance.HALF_DAY,
+            label = "HD", selected = current == Attendance.HALF_DAY, unset = unset,
             selectedColor = HalfDayColor, locked = locked,
             onClick = { onSelect(Attendance.HALF_DAY) }
         )
         AttendanceChip(
-            label = "A", selected = current == Attendance.ABSENT,
+            label = "A", selected = current == Attendance.ABSENT, unset = unset,
             selectedColor = AbsentColor, locked = locked,
             onClick = { onSelect(Attendance.ABSENT) }
         )
@@ -567,7 +589,7 @@ private fun AttendanceChips(
 
 @Composable
 private fun AttendanceChip(
-    label: String, selected: Boolean,
+    label: String, selected: Boolean, unset: Boolean,
     selectedColor: Color, locked: Boolean,
     onClick: () -> Unit,
 ) {
@@ -581,8 +603,16 @@ private fun AttendanceChip(
         animationSpec = spring(stiffness = Spring.StiffnessHigh),
         label = "chip_scale_$label"
     )
-    val textColor = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-    val borderColor = if (selected) selectedColor.copy(alpha = 0.6f) else Color.Transparent
+    val textColor = when {
+        selected -> Color.White
+        unset    -> HalfDayColor.copy(alpha = 0.7f)
+        else     -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val borderColor = when {
+        selected -> selectedColor.copy(alpha = 0.6f)
+        unset    -> HalfDayColor.copy(alpha = 0.5f)   // amber border = needs action
+        else     -> Color.Transparent
+    }
 
     Box(
         modifier = Modifier
