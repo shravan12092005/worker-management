@@ -21,6 +21,8 @@ import com.workermanagement.app.ui.navigation.BottomNavBar
 import com.workermanagement.app.ui.navigation.Screen
 import com.workermanagement.app.ui.role.RoleListScreen
 import com.workermanagement.app.ui.role.RoleViewModel
+import com.workermanagement.app.ui.settlement.SettlementScreen
+import com.workermanagement.app.ui.settlement.SettlementViewModel
 import com.workermanagement.app.ui.site.SiteListScreen
 import com.workermanagement.app.ui.site.SiteViewModel
 import com.workermanagement.app.ui.theme.AppTheme
@@ -66,7 +68,14 @@ class MainActivity : ComponentActivity() {
                                 vm = viewModel(factory = AttendanceViewModel.Factory(dbRef))
                             )
                         }
-                        // ── Workers ──────────────────────────────────────
+
+                        // ── Settlement ───────────────────────────────────────
+                        composable(Screen.Settlement.route) {
+                            SettlementScreen(
+                                vm = viewModel(factory = SettlementViewModel.Factory(dbRef))
+                            )
+                        }
+
                         composable(Screen.Workers.route) {
                             val workerVm: WorkerViewModel =
                                 viewModel(factory = WorkerViewModel.Factory(dbRef))
