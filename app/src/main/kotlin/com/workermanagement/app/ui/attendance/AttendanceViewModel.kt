@@ -145,9 +145,9 @@ class AttendanceViewModel(private val db: AppDatabase) : ViewModel() {
                 newRows += WorkerAttendanceRow(
                     worker = worker,
                     existingRecord = null,
-                    // D-4: assignment ≠ present; default to PRESENT as a helpful
-                    // pre-fill (user can change), but attendance is independent
-                    attendance = Attendance.PRESENT,
+                    // D-4: assigning a worker to a site MUST NOT set attendance to PRESENT.
+                    // The user must explicitly tap P / HD / A before saving.
+                    attendance = null,
                     roleId = worker.defaultRoleId,
                     wage = worker.defaultWage,
                 )
