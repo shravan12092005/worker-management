@@ -21,6 +21,8 @@ import com.workermanagement.app.ui.navigation.BottomNavBar
 import com.workermanagement.app.ui.navigation.Screen
 import com.workermanagement.app.ui.payment.PaymentScreen
 import com.workermanagement.app.ui.payment.PaymentViewModel
+import com.workermanagement.app.ui.report.ReportScreen
+import com.workermanagement.app.ui.report.ReportViewModel
 import com.workermanagement.app.ui.role.RoleListScreen
 import com.workermanagement.app.ui.role.RoleViewModel
 import com.workermanagement.app.ui.settlement.SettlementScreen
@@ -166,6 +168,11 @@ class MainActivity : ComponentActivity() {
                         // ── Sites ────────────────────────────────────────
                         composable(Screen.Sites.route) {
                             SiteListScreen(vm = viewModel(factory = SiteViewModel.Factory(dbRef)))
+                        }
+
+                        // ── Reports ──────────────────────────────────────
+                        composable(Screen.Reports.route) {
+                            ReportScreen(vm = viewModel(factory = ReportViewModel.Factory(dbRef)))
                         }
 
                         // ── Roles ────────────────────────────────────────

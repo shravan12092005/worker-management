@@ -49,21 +49,6 @@ interface SiteDao {
     """)
     fun getHeadcountPerSiteOnDate(date: String): List<SiteHeadcount>
 
-    /**
-     * Total wages generated per site for a date range — site-wise wage cost (§9).
-     */
-    @Query("""
-        SELECT dr.site_id,
-               SUM(CASE WHEN dr.attendance = 'PRESENT'  THEN dr.wage
-                        WHEN dr.attendance = 'HALF_DAY' THEN dr.wage / 2
-                        ELSE 0 END
-               + dr.overtime_amount) AS totalWageCost
-        FROM daily_record dr
-        WHERE dr.work_date >= :from AND dr.work_date <= :to
-        GROUP BY dr.site_id
-    """)
-    fun getSiteWageCotsInRange(from: String, to: String): List<SiteWageCost>
 }
 
 data class SiteHeadcount(val site_id: String, val headcount: Int)
-data class SiteWageCost(val site_id: String, val totalWageCost: Int)

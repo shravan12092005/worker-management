@@ -1,6 +1,7 @@
 package com.workermanagement.app.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
@@ -24,6 +25,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
     data object Payments   : Screen("payments",    "Payments",    Icons.Default.MonetizationOn)
     data object Workers    : Screen("workers",     "Workers",     Icons.Default.Groups)
     data object Sites      : Screen("sites",       "Sites",       Icons.Default.LocationOn)
+    data object Reports    : Screen("reports",     "Reports",     Icons.Default.Assessment)
 
     // Sub-routes (no bottom nav item)
     data object Home        : Screen("home",               "Home",         Icons.Default.Home)
@@ -33,7 +35,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
 }
 
 val bottomNavItems = listOf(
-    Screen.Attendance, Screen.Settlement, Screen.Payments, Screen.Workers, Screen.Sites
+    Screen.Attendance, Screen.Settlement, Screen.Payments, Screen.Workers, Screen.Reports
 )
 
 @Composable

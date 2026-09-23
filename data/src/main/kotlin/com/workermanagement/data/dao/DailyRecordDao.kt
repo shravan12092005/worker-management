@@ -98,6 +98,33 @@ interface DailyRecordDao {
         ORDER BY worker_id ASC
     """)
     fun getYesterdayAssignmentForSite(siteId: String, yesterday: String): List<DailyRecord>
+
+    /**
+     * Raw daily records for a date range — used by site-wise wage cost report (§9).
+     * No SQL aggregation or arithmetic; caller groups by site and computes
+     * totals via WageEngine.dayTotal() in Kotlin (G-1, C-3 compliance).
+     */
+    @Query("""
+        SELECT * FROM daily_record
+        WHERE work_date >= :from AND work_date <= :to
+        ORDER BY site_id ASC, work_date ASC
+    """)
+    fun getRecordsInDateRange(from: String, to: String): List<DailyRecord>
+
+    /**
+     * Site-wise attendance — headcount per site per day in range (§9).
+     * Uses COUNT(*) only — no monetary arithmetic in SQL.
+     */
+    @Query("""
+        SELECT site_id, work_date, COUNT(*) AS headcount
+        FROM daily_record
+        WHERE work_date >= :from AND work_date <= :to
+          AND attendance != 'ABSENT'
+        GROUP BY site_id, work_date
+        ORDER BY work_date ASC, site_id ASC
+    """)
+    fun getHeadcountBySiteInRange(from: String, to: String): List<SiteDateHeadcount>
 }
 
 data class WorkerDaysWorked(val worker_id: String, val daysWorked: Int)
+data class SiteDateHeadcount(val site_id: String, val work_date: String, val headcount: Int)
